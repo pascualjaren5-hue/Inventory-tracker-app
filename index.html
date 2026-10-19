@@ -1,0 +1,220 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>School Inventory Tracker</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<section id="authScreen" class="auth-screen">
+<div class="auth-card">
+<div class="logo">SI</div>
+<p class="eyebrow">SCHOOL PROPERTY MANAGEMENT</p>
+<h1>SCHOOL INVENTORY TRACKER</h1>
+<p class="muted">Sign in to access the shared school inventory.</p>
+<div class="tabs">
+<button id="loginTab" class="active" type="button">Login</button>
+<button id="registerTab" type="button">Create Account</button>
+</div>
+<form id="authForm">
+<label id="nameLabel" hidden>Full Name
+<input id="accountName" autocomplete="name">
+</label>
+<label>Email
+<input id="email" type="email" autocomplete="username" required>
+</label>
+<label>Password
+<input id="password" type="password" minlength="6" autocomplete="current-password" required>
+</label>
+<button id="authSubmit" class="btn primary full" type="submit">Login</button>
+</form>
+<button id="forgotPassword" class="link" type="button">Forgot password?</button>
+<p id="authMessage" class="message"></p>
+<small>Firebase setup and internet are required for cloud sync.</small>
+</div>
+</section>
+
+<div id="appScreen" hidden>
+<header class="topbar">
+<div>
+<p class="eyebrow light">SCHOOL PROPERTY MANAGEMENT</p>
+<h1>SCHOOL INVENTORY TRACKER</h1>
+<p>Shared School Equipment Inventory</p>
+</div>
+<div class="head-actions">
+<span id="syncState">Connecting…</span>
+<button id="downloadTop" class="btn light" type="button">Download PDF</button>
+<button id="logoutButton" class="btn outline" type="button">Log out</button>
+</div>
+</header>
+
+<main class="container">
+<div class="welcome">
+<div>
+<h2 id="welcomeText">Welcome</h2>
+<p class="muted">Changes sync to signed-in devices while online.</p>
+</div>
+<span class="pill">● Cloud inventory</span>
+</div>
+
+<section class="stats">
+<article><span>Total Records</span><strong id="totalRecords">0</strong></article>
+<article><span>Total Quantity</span><strong id="totalQuantity">0</strong></article>
+<article><span>Available</span><strong id="availableCount">0</strong></article>
+<article><span>Needs Attention</span><strong id="attentionCount">0</strong></article>
+</section>
+
+<section class="panel">
+<div class="heading">
+<div>
+<p class="eyebrow">INVENTORY MANAGEMENT</p>
+<h2 id="formTitle">Add School Equipment</h2>
+</div>
+<span class="pill">School Equipment</span>
+</div>
+
+<form id="equipmentForm">
+<input id="editId" type="hidden">
+<div class="form-grid">
+<label>Equipment Name
+<input id="equipmentName" maxlength="100" placeholder="e.g., Chair, Table, Fan" required>
+</label>
+<label>Quantity
+<input id="quantity" type="number" min="1" step="1" required>
+</label>
+<label>Condition
+<select id="condition" required>
+<option value="">Select condition</option>
+<option>Good</option>
+<option>Fair</option>
+<option>Damaged</option>
+<option>For Repair</option>
+<option>Beyond Repair</option>
+</select>
+</label>
+<label>Status
+<select id="status" required>
+<option value="">Select status</option>
+<option>Available</option>
+<option>In Use</option>
+<option>Borrowed</option>
+<option>Under Repair</option>
+<option>Missing</option>
+<option>Condemned</option>
+<option>Disposed</option>
+</select>
+</label>
+<label class="wide">Location
+<input id="location" maxlength="100" placeholder="e.g., Grade 12 Room" required>
+</label>
+</div>
+<div class="actions">
+<button id="saveButton" class="btn primary" type="submit">Save Equipment</button>
+<button id="cancelEdit" class="btn muted-btn" type="button" hidden>Cancel Edit</button>
+<button id="clearForm" class="btn muted-btn" type="button">Clear Form</button>
+</div>
+</form>
+</section>
+
+<section class="panel">
+<div class="heading">
+<div>
+<p class="eyebrow">SAVED RECORDS</p>
+<h2>School Equipment Inventory</h2>
+</div>
+<button id="downloadPdf" class="btn primary" type="button">Download PDF Report</button>
+</div>
+
+<div class="toolbar">
+<input id="searchInput" type="search" placeholder="Search equipment, condition, status, or location">
+<select id="statusFilter">
+<option value="">All statuses</option>
+<option>Available</option>
+<option>In Use</option>
+<option>Borrowed</option>
+<option>Under Repair</option>
+<option>Missing</option>
+<option>Condemned</option>
+<option>Disposed</option>
+</select>
+<select id="sortBy">
+<option value="name">Sort: Equipment name</option>
+<option value="quantity">Sort: Quantity</option>
+<option value="location">Sort: Location</option>
+<option value="status">Sort: Status</option>
+</select>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Equipment Name</th>
+<th>Quantity</th>
+<th>Location</th>
+<th>Condition</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="inventoryBody"></tbody>
+</table>
+<div id="emptyState" class="empty">No equipment records yet. Add your first record above.</div>
+</div>
+<p class="muted small">
+‎  Cloud records are shared with authenticated users permitted by Firebase rules.
+‎</p>
+‎</section>
+‎
+‎<!-- ADDED: PDF REPORT INFORMATION -->
+‎<section class="panel">
+‎  <div class="heading">
+‎    <div>
+‎      <p class="eyebrow">REPORT SETTINGS</p>
+‎      <h2>PDF Report Information</h2>
+‎    </div>
+‎  </div>
+‎
+‎  <div class="form-grid">
+‎    <label>Name of Prepared By
+‎      <input
+‎        id="preparedBy"
+‎        type="text"
+‎        maxlength="100"
+‎        placeholder="Enter your full name"
+‎      >
+‎    </label>
+‎
+‎    <label>Section
+‎      <input
+‎        id="preparedSection"
+‎        type="text"
+‎        maxlength="100"
+‎        placeholder="e.g., Grade 12 - ICT"
+‎      >
+‎    </label>
+‎  </div>
+‎
+‎  <div class="actions">
+‎    <button id="saveReportInfo" class="btn primary" type="button">
+‎      Save Report Information
+‎    </button>
+‎  </div>
+‎
+‎  <p id="reportInfoMessage" class="message" role="status"></p>
+‎</section>
+‎</main>
+‎
+‎<footer>School Inventory Tracker • School Equipment Records</footer>
+‎</escape>
+</div>
+
+<div id="toast" class="toast"></div>
+<script type="module" src="script.js"></script>
+</body>
+</html>
