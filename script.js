@@ -46,6 +46,55 @@ let unsubscribe = null;
 let mode = "login";
 let toastTimer = null;
 
+// EACH ACCOUNT HAS ITS OWN INVENTORY COLLECTION
+function inventoryCollection() {
+  if (!user) throw new Error("Please log in first.");
+
+  return collection(
+    db,
+    "users",
+    user.uid,
+    "schoolInventory"
+  );
+}
+
+function inventoryDocument(recordId) {
+  if (!user) throw new Error("Please log in first.");
+
+  return doc(
+    db,
+    "users",
+    user.uid,
+    "schoolInventory",
+    recordId
+  );
+}
+
+// KEEP REPORT INFORMATION SEPARATE FOR EACH ACCOUNT
+function reportInfoKey(field) {
+  if (!user) return null;
+
+  return `report_${user.uid}_${field}`;
+}
+
+function loadReportInfo() {
+  if (!user) return;
+
+  if (preparedByInput) {
+    preparedByInput.value =
+      localStorage.getItem(
+        reportInfoKey("preparedBy")
+      ) || "";
+  }
+
+  if (preparedSectionInput) {
+    preparedSectionInput.value =
+      localStorage.getItem(
+        reportInfoKey("preparedSection")
+      ) || "";
+  }
+}
+
 // NOTIFICATION
 function toast(message) {
   const el = $("toast");
@@ -71,15 +120,6 @@ const preparedSectionInput = $("preparedSection");
 const saveReportInfoButton = $("saveReportInfo");
 const reportInfoMessage = $("reportInfoMessage");
 
-// LOAD SAVED REPORT INFORMATION
-if (preparedByInput && preparedSectionInput) {
-  preparedByInput.value =
-    localStorage.getItem("reportPreparedBy") || "";
-
-  preparedSectionInput.value =
-    localStorage.getItem("reportPreparedSection") || "";
-}
-
 // SAVE REPORT INFORMATION
 if (saveReportInfoButton) {
   saveReportInfoButton.addEventListener("click", () => {
@@ -89,13 +129,18 @@ if (saveReportInfoButton) {
     const preparedSection =
       preparedSectionInput?.value.trim() || "";
 
+    if (!user) {
+      toast("Please log in first.");
+      return;
+    }
+
     localStorage.setItem(
-      "reportPreparedBy",
+      reportInfoKey("preparedBy"),
       preparedBy
     );
 
     localStorage.setItem(
-      "reportPreparedSection",
+      reportInfoKey("preparedSection"),
       preparedSection
     );
 
@@ -229,6 +274,7 @@ onAuthStateChanged(auth, currentUser => {
         ? ", " + currentUser.displayName
         : "");
 
+    loadReportInfo();
     listenInventory();
 
   } else {
@@ -373,7 +419,7 @@ function listenInventory() {
 
   unsubscribe = onSnapshot(
     query(
-      collection(db, "schoolInventory"),
+      inventoryCollection(),
       orderBy("name")
     ),
 
@@ -491,6 +537,8 @@ function syncCustomDropdown(fieldId) {
   );
 
   const source = $(fieldId);
+
+  if (!trigger || !menu || !source) return;
 
   // OPEN AND CLOSE DROPDOWN
   trigger.addEventListener("click", event => {
@@ -761,11 +809,7 @@ form.addEventListener(
     try {
       if (fields.id.value) {
         await updateDoc(
-          doc(
-            db,
-            "schoolInventory",
-            fields.id.value
-          ),
+          inventoryDocument(fields.id.value),
           payload
         );
 
@@ -773,7 +817,7 @@ form.addEventListener(
 
       } else {
         await addDoc(
-          collection(db, "schoolInventory"),
+          inventoryCollection(),
           {
             ...payload,
             createdAt: serverTimestamp(),
@@ -854,12 +898,12 @@ $("inventoryBody").addEventListener(
     if (
       button.dataset.action === "delete" &&
       confirm(
-        `Delete "${record.name}" from the shared inventory? This cannot be undone.`
+        `Delete "${record.name}" from your inventory? This cannot be undone.`
       )
     ) {
       try {
         await deleteDoc(
-          doc(db, "schoolInventory", record.id)
+          inventoryDocument(record.id)
         );
 
         toast("Record deleted.");
@@ -1093,13 +1137,17 @@ function downloadPdf() {
 
   // PREPARED BY AND SECTION
   const preparedBy =
-    localStorage.getItem("reportPreparedBy") ||
+    (user && localStorage.getItem(
+      reportInfoKey("preparedBy")
+    )) ||
     user?.displayName ||
     user?.email ||
     "________________";
 
   const preparedSection =
-    localStorage.getItem("reportPreparedSection") ||
+    (user && localStorage.getItem(
+      reportInfoKey("preparedSection")
+    )) ||
     "________________";
 
   const finalY =
