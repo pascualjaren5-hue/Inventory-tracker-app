@@ -66,13 +66,12 @@ function toast(message) {
 }
 
 // PDF REPORT INFORMATION
-// Save and load Prepared By and Section using LocalStorage
 const preparedByInput = $("preparedBy");
 const preparedSectionInput = $("preparedSection");
 const saveReportInfoButton = $("saveReportInfo");
 const reportInfoMessage = $("reportInfoMessage");
 
-// Load saved report information
+// LOAD SAVED REPORT INFORMATION
 if (preparedByInput && preparedSectionInput) {
   preparedByInput.value =
     localStorage.getItem("reportPreparedBy") || "";
@@ -81,15 +80,24 @@ if (preparedByInput && preparedSectionInput) {
     localStorage.getItem("reportPreparedSection") || "";
 }
 
-// Save report information
+// SAVE REPORT INFORMATION
 if (saveReportInfoButton) {
   saveReportInfoButton.addEventListener("click", () => {
-    const preparedBy = preparedByInput?.value.trim() || "";
+    const preparedBy =
+      preparedByInput?.value.trim() || "";
+
     const preparedSection =
       preparedSectionInput?.value.trim() || "";
 
-    localStorage.setItem("reportPreparedBy", preparedBy);
-    localStorage.setItem("reportPreparedSection", preparedSection);
+    localStorage.setItem(
+      "reportPreparedBy",
+      preparedBy
+    );
+
+    localStorage.setItem(
+      "reportPreparedSection",
+      preparedSection
+    );
 
     if (reportInfoMessage) {
       reportInfoMessage.textContent =
@@ -114,18 +122,25 @@ function authMessage(message, success = false) {
   if (!$("authMessage")) return;
 
   $("authMessage").textContent = message;
-  $("authMessage").classList.toggle("success", success);
+
+  $("authMessage").classList.toggle(
+    "success",
+    success
+  );
 }
 
 // ESCAPE HTML
 function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[character]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
 }
 
 // ERROR MESSAGES
@@ -170,10 +185,18 @@ function setMode(nextMode) {
 
   const registering = mode === "register";
 
-  $("loginTab").classList.toggle("active", !registering);
-  $("registerTab").classList.toggle("active", registering);
+  $("loginTab").classList.toggle(
+    "active",
+    !registering
+  );
+
+  $("registerTab").classList.toggle(
+    "active",
+    registering
+  );
 
   $("nameLabel").hidden = !registering;
+
   $("accountName").required = registering;
 
   $("authSubmit").textContent =
@@ -207,6 +230,7 @@ onAuthStateChanged(auth, currentUser => {
         : "");
 
     listenInventory();
+
   } else {
     stopListen();
 
@@ -220,97 +244,114 @@ onAuthStateChanged(auth, currentUser => {
 });
 
 // LOGIN / REGISTRATION FORM
-$("authForm").addEventListener("submit", async event => {
-  event.preventDefault();
+$("authForm").addEventListener(
+  "submit",
+  async event => {
+    event.preventDefault();
 
-  const button = $("authSubmit");
+    const button = $("authSubmit");
 
-  button.disabled = true;
-
-  authMessage(
-    mode === "register"
-      ? "Creating account..."
-      : "Signing in..."
-  );
-
-  try {
-    const email = $("email").value.trim();
-    const password = $("password").value;
-
-    if (mode === "register") {
-      const name = $("accountName").value.trim();
-
-      if (!name) {
-        throw new Error("Enter your full name.");
-      }
-
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      await updateProfile(result.user, {
-        displayName: name
-      });
-
-      authMessage(
-        "Account created successfully.",
-        true
-      );
-    } else {
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      authMessage("Login successful.", true);
-    }
-
-    $("authForm").reset();
-
-  } catch (error) {
-    authMessage(errorText(error));
-
-  } finally {
-    button.disabled = false;
-  }
-});
-
-// PASSWORD RESET
-$("forgotPassword").addEventListener("click", async () => {
-  const email = $("email").value.trim();
-
-  if (!email) {
-    authMessage("Enter your email address first.");
-    return;
-  }
-
-  try {
-    await sendPasswordResetEmail(auth, email);
+    button.disabled = true;
 
     authMessage(
-      "If the email is registered, a reset email will be sent.",
-      true
+      mode === "register"
+        ? "Creating account..."
+        : "Signing in..."
     );
 
-  } catch (error) {
-    authMessage(errorText(error));
+    try {
+      const email = $("email").value.trim();
+      const password = $("password").value;
+
+      if (mode === "register") {
+        const name = $("accountName").value.trim();
+
+        if (!name) {
+          throw new Error("Enter your full name.");
+        }
+
+        const result =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+        await updateProfile(result.user, {
+          displayName: name
+        });
+
+        authMessage(
+          "Account created successfully.",
+          true
+        );
+
+      } else {
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        authMessage(
+          "Login successful.",
+          true
+        );
+      }
+
+      $("authForm").reset();
+
+    } catch (error) {
+      authMessage(errorText(error));
+
+    } finally {
+      button.disabled = false;
+    }
   }
-});
+);
+
+// PASSWORD RESET
+$("forgotPassword").addEventListener(
+  "click",
+  async () => {
+    const email = $("email").value.trim();
+
+    if (!email) {
+      authMessage(
+        "Enter your email address first."
+      );
+
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+
+      authMessage(
+        "If the email is registered, a reset email will be sent.",
+        true
+      );
+
+    } catch (error) {
+      authMessage(errorText(error));
+    }
+  }
+);
 
 // LOGOUT
-$("logoutButton").addEventListener("click", async () => {
-  if (!confirm("Log out?")) return;
+$("logoutButton").addEventListener(
+  "click",
+  async () => {
+    if (!confirm("Log out?")) return;
 
-  try {
-    await signOut(auth);
+    try {
+      await signOut(auth);
 
-  } catch (error) {
-    toast(errorText(error));
+    } catch (error) {
+      toast(errorText(error));
+    }
   }
-});
+);
 
 // FIRESTORE LISTENER
 function stopListen() {
@@ -372,9 +413,162 @@ const fields = {
   location: $("location")
 };
 
+// ========================================
+// CUSTOM DROPDOWN: CONDITION AND STATUS
+// ========================================
+
+function closeCustomDropdowns(except = null) {
+  document.querySelectorAll(".custom-select").forEach(wrapper => {
+    if (wrapper === except) return;
+
+    const trigger = wrapper.querySelector(
+      ".custom-select-trigger"
+    );
+
+    const menu = wrapper.querySelector(
+      ".custom-select-menu"
+    );
+
+    if (menu) {
+      menu.hidden = true;
+    }
+
+    if (trigger) {
+      trigger.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+    }
+  });
+}
+
+// UPDATE VISIBLE DROPDOWN VALUE
+function syncCustomDropdown(fieldId) {
+  const select = $(fieldId);
+
+  const valueLabel = $(fieldId + "Value");
+
+  const wrapper = document.querySelector(
+    `[data-custom-select="${fieldId}"]`
+  );
+
+  if (!select || !valueLabel || !wrapper) return;
+
+  const selected =
+    select.options[select.selectedIndex];
+
+  valueLabel.textContent = select.value
+    ? selected.textContent
+    : (selected?.textContent || "Select an option");
+
+  wrapper.querySelectorAll(
+    ".custom-select-option"
+  ).forEach(option => {
+    const isSelected =
+      option.dataset.value === select.value;
+
+    option.setAttribute(
+      "aria-selected",
+      String(isSelected)
+    );
+  });
+}
+
+// INITIALIZE BOTH CUSTOM DROPDOWNS
+["condition", "status"].forEach(fieldId => {
+  const wrapper = document.querySelector(
+    `[data-custom-select="${fieldId}"]`
+  );
+
+  if (!wrapper) return;
+
+  const trigger = wrapper.querySelector(
+    ".custom-select-trigger"
+  );
+
+  const menu = wrapper.querySelector(
+    ".custom-select-menu"
+  );
+
+  const source = $(fieldId);
+
+  // OPEN AND CLOSE DROPDOWN
+  trigger.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const willOpen = menu.hidden;
+
+    closeCustomDropdowns(wrapper);
+
+    menu.hidden = !willOpen;
+
+    trigger.setAttribute(
+      "aria-expanded",
+      String(willOpen)
+    );
+  });
+
+  // SELECT AN OPTION
+  menu.querySelectorAll(
+    ".custom-select-option"
+  ).forEach(option => {
+    option.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      source.value = option.dataset.value;
+
+      // UPDATE ORIGINAL SELECT VALUE
+      source.dispatchEvent(
+        new Event("change", {
+          bubbles: true
+        })
+      );
+
+      // UPDATE VISIBLE BUTTON
+      syncCustomDropdown(fieldId);
+
+      // CLOSE MENU
+      menu.hidden = true;
+
+      trigger.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+      trigger.focus();
+    });
+  });
+
+  // KEEP BOTH VALUES SYNCHRONIZED
+  source.addEventListener("change", () => {
+    syncCustomDropdown(fieldId);
+  });
+
+  syncCustomDropdown(fieldId);
+});
+
+// CLOSE WHEN CLICKING OUTSIDE
+document.addEventListener("click", event => {
+  if (!event.target.closest(".custom-select")) {
+    closeCustomDropdowns();
+  }
+});
+
+// CLOSE WITH ESCAPE KEY
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeCustomDropdowns();
+  }
+});
+
 // RESET FORM
 function resetForm() {
   form.reset();
+
+  syncCustomDropdown("condition");
+  syncCustomDropdown("status");
 
   fields.id.value = "";
 
@@ -395,6 +589,7 @@ function visibleRecords() {
     .toLowerCase();
 
   const status = $("statusFilter").value;
+
   const sort = $("sortBy").value;
 
   return records
@@ -516,84 +711,91 @@ function render() {
 }
 
 // ADD OR UPDATE EQUIPMENT
-form.addEventListener("submit", async event => {
-  event.preventDefault();
+form.addEventListener(
+  "submit",
+  async event => {
+    event.preventDefault();
 
-  if (!user) {
-    toast("Please log in first.");
-    return;
-  }
-
-  const name = fields.name.value.trim();
-  const quantity = Number(fields.qty.value);
-  const condition = fields.condition.value;
-  const status = fields.status.value;
-  const location = fields.location.value.trim();
-
-  if (
-    !name ||
-    !Number.isInteger(quantity) ||
-    quantity < 1 ||
-    !condition ||
-    !status ||
-    !location
-  ) {
-    toast(
-      "Complete all fields with valid values."
-    );
-
-    return;
-  }
-
-  const payload = {
-    name,
-    quantity,
-    condition,
-    status,
-    location,
-    updatedAt: serverTimestamp(),
-    updatedBy: user.uid
-  };
-
-  $("saveButton").disabled = true;
-
-  try {
-    if (fields.id.value) {
-      await updateDoc(
-        doc(
-          db,
-          "schoolInventory",
-          fields.id.value
-        ),
-        payload
-      );
-
-      toast("Record updated in cloud.");
-
-    } else {
-      await addDoc(
-        collection(db, "schoolInventory"),
-        {
-          ...payload,
-          createdAt: serverTimestamp(),
-          createdBy: user.uid
-        }
-      );
-
-      toast("Record saved to cloud.");
+    if (!user) {
+      toast("Please log in first.");
+      return;
     }
 
-    resetForm();
+    const name = fields.name.value.trim();
 
-  } catch (error) {
-    toast(errorText(error));
+    const quantity = Number(fields.qty.value);
 
-    console.error("Save error:", error);
+    const condition = fields.condition.value;
 
-  } finally {
-    $("saveButton").disabled = false;
+    const status = fields.status.value;
+
+    const location = fields.location.value.trim();
+
+    if (
+      !name ||
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      !condition ||
+      !status ||
+      !location
+    ) {
+      toast(
+        "Complete all fields with valid values."
+      );
+
+      return;
+    }
+
+    const payload = {
+      name,
+      quantity,
+      condition,
+      status,
+      location,
+      updatedAt: serverTimestamp(),
+      updatedBy: user.uid
+    };
+
+    $("saveButton").disabled = true;
+
+    try {
+      if (fields.id.value) {
+        await updateDoc(
+          doc(
+            db,
+            "schoolInventory",
+            fields.id.value
+          ),
+          payload
+        );
+
+        toast("Record updated in cloud.");
+
+      } else {
+        await addDoc(
+          collection(db, "schoolInventory"),
+          {
+            ...payload,
+            createdAt: serverTimestamp(),
+            createdBy: user.uid
+          }
+        );
+
+        toast("Record saved to cloud.");
+      }
+
+      resetForm();
+
+    } catch (error) {
+      toast(errorText(error));
+
+      console.error("Save error:", error);
+
+    } finally {
+      $("saveButton").disabled = false;
+    }
   }
-});
+);
 
 // EDIT / DELETE EQUIPMENT
 $("inventoryBody").addEventListener(
@@ -614,11 +816,23 @@ $("inventoryBody").addEventListener(
     // EDIT
     if (button.dataset.action === "edit") {
       fields.id.value = record.id;
+
       fields.name.value = record.name || "";
+
       fields.qty.value = record.quantity ?? "";
-      fields.condition.value = record.condition || "";
-      fields.status.value = record.status || "";
-      fields.location.value = record.location || "";
+
+      fields.condition.value =
+        record.condition || "";
+
+      fields.status.value =
+        record.status || "";
+
+      // UPDATE CUSTOM DROPDOWNS
+      syncCustomDropdown("condition");
+      syncCustomDropdown("status");
+
+      fields.location.value =
+        record.location || "";
 
       $("formTitle").textContent =
         "Edit School Equipment";
@@ -668,11 +882,14 @@ $("cancelEdit").addEventListener(
 );
 
 // CLEAR FORM
-$("clearForm").addEventListener("click", () => {
-  resetForm();
+$("clearForm").addEventListener(
+  "click",
+  () => {
+    resetForm();
 
-  toast("Form cleared.");
-});
+    toast("Form cleared.");
+  }
+);
 
 // SEARCH, FILTER AND SORT EVENTS
 [
@@ -712,7 +929,7 @@ function downloadPdf() {
     return;
   }
 
-  // Ask for a filename
+  // ASK FOR FILENAME
   const filename = prompt(
     "PDF filename:",
     "School_Equipment_Inventory_Report"
@@ -735,6 +952,7 @@ function downloadPdf() {
   });
 
   const width = pdf.internal.pageSize.getWidth();
+
   const height = pdf.internal.pageSize.getHeight();
 
   const date = new Date().toLocaleDateString(
@@ -748,6 +966,7 @@ function downloadPdf() {
 
   // REPORT TITLE
   pdf.setFont("helvetica", "bold");
+
   pdf.setFontSize(16);
 
   pdf.text(
@@ -758,6 +977,7 @@ function downloadPdf() {
   );
 
   pdf.setFont("helvetica", "normal");
+
   pdf.setFontSize(9);
 
   pdf.text(
@@ -853,6 +1073,7 @@ function downloadPdf() {
     // PAGE FOOTER
     didDrawPage: () => {
       pdf.setFontSize(7);
+
       pdf.setTextColor(80, 88, 100);
 
       pdf.text(
@@ -871,7 +1092,6 @@ function downloadPdf() {
   });
 
   // PREPARED BY AND SECTION
-  // These details appear BELOW the inventory table.
   const preparedBy =
     localStorage.getItem("reportPreparedBy") ||
     user?.displayName ||
@@ -894,6 +1114,7 @@ function downloadPdf() {
     signatureY = 25;
 
     pdf.setFontSize(7);
+
     pdf.setTextColor(80, 88, 100);
 
     pdf.text(
@@ -912,7 +1133,9 @@ function downloadPdf() {
 
   // PRINT PREPARED BY
   pdf.setFont("helvetica", "normal");
+
   pdf.setFontSize(9);
+
   pdf.setTextColor(40, 45, 55);
 
   pdf.text(
