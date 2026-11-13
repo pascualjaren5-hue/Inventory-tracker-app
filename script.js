@@ -1,4 +1,3 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 
 import {
@@ -26,7 +25,7 @@ import {
 
 // FIREBASE CONFIGURATION
 const firebaseConfig = {
-  apiKey: "AIzaSyCToRXT7Q5UGTSMkq7nM_IlWlANiLGO7o",
+  apiKey: "AIzaSyCToRXT7Q5UG6TSMkq7nM_IlWlANiLGO7o",
   authDomain: "inventory-tracker-c3821.firebaseapp.com",
   projectId: "inventory-tracker-c3821",
   storageBucket: "inventory-tracker-c3821.firebasestorage.app",
@@ -461,38 +460,6 @@ const fields = {
 };
 
 // ========================================
-// OTHER EQUIPMENT NAME
-// ========================================
-
-const otherEquipmentLabel = $("otherEquipmentLabel");
-const otherEquipmentName = $("otherEquipmentName");
-
-// SHOW OR HIDE PLEASE SPECIFY
-function updateOtherEquipmentField() {
-  const isOther = fields.name.value === "Other";
-
-  if (otherEquipmentLabel) {
-    otherEquipmentLabel.hidden = !isOther;
-  }
-
-  if (otherEquipmentName) {
-    otherEquipmentName.required = isOther;
-
-    if (!isOther) {
-      otherEquipmentName.value = "";
-    }
-  }
-}
-
-// WHEN EQUIPMENT NAME CHANGES
-fields.name.addEventListener("change", () => {
-  updateOtherEquipmentField();
-});
-
-// INITIAL STATE
-updateOtherEquipmentField();
-
-// ========================================
 // CUSTOM DROPDOWN: CONDITION AND STATUS
 // ========================================
 
@@ -600,14 +567,17 @@ function syncCustomDropdown(fieldId) {
 
       source.value = option.dataset.value;
 
+      // UPDATE ORIGINAL SELECT VALUE
       source.dispatchEvent(
         new Event("change", {
           bubbles: true
         })
       );
 
+      // UPDATE VISIBLE BUTTON
       syncCustomDropdown(fieldId);
 
+      // CLOSE MENU
       menu.hidden = true;
 
       trigger.setAttribute(
@@ -644,8 +614,6 @@ document.addEventListener("keydown", event => {
 // RESET FORM
 function resetForm() {
   form.reset();
-
-  updateOtherEquipmentField();
 
   syncCustomDropdown("condition");
   syncCustomDropdown("status");
@@ -801,14 +769,7 @@ form.addEventListener(
       return;
     }
 
-    // GET THE ACTUAL EQUIPMENT NAME
-    let name = "";
-
-    if (fields.name.value === "Other") {
-      name = otherEquipmentName.value.trim();
-    } else {
-      name = fields.name.value.trim();
-    }
+    const name = fields.name.value.trim();
 
     const quantity = Number(fields.qty.value);
 
@@ -827,9 +788,7 @@ form.addEventListener(
       !location
     ) {
       toast(
-        fields.name.value === "Other" && !name
-          ? "Please specify the equipment name."
-          : "Complete all fields with valid values."
+        "Complete all fields with valid values."
       );
 
       return;
@@ -902,32 +861,7 @@ $("inventoryBody").addEventListener(
     if (button.dataset.action === "edit") {
       fields.id.value = record.id;
 
-      // CHECK IF THE RECORD NAME EXISTS IN THE DROPDOWN
-      const standardOption = Array.from(
-        fields.name.options
-      ).find(option =>
-        option.value === record.name &&
-        option.value !== "Other" &&
-        option.value !== ""
-      );
-
-      if (standardOption) {
-        fields.name.value = record.name;
-
-        if (otherEquipmentName) {
-          otherEquipmentName.value = "";
-        }
-
-      } else {
-        // CUSTOM EQUIPMENT NAME
-        fields.name.value = "Other";
-
-        if (otherEquipmentName) {
-          otherEquipmentName.value = record.name || "";
-        }
-      }
-
-      updateOtherEquipmentField();
+      fields.name.value = record.name || "";
 
       fields.qty.value = record.quantity ?? "";
 
@@ -937,6 +871,7 @@ $("inventoryBody").addEventListener(
       fields.status.value =
         record.status || "";
 
+      // UPDATE CUSTOM DROPDOWNS
       syncCustomDropdown("condition");
       syncCustomDropdown("status");
 
