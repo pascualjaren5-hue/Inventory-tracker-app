@@ -459,9 +459,26 @@ const fields = {
   location: $("location")
 };
 
-// ========================================
+// SHOW THE SPECIFY FIELD WHEN "OTHERS" IS SELECTED
+const otherEquipmentNameInput = $("otherEquipmentName");
+
+function updateOtherEquipmentField() {
+  const isOthers = fields.name.value === "Others";
+
+  otherEquipmentNameInput.hidden = !isOthers;
+  otherEquipmentNameInput.required = isOthers;
+
+  if (!isOthers) {
+    otherEquipmentNameInput.value = "";
+  }
+}
+
+fields.name.addEventListener(
+  "change",
+  updateOtherEquipmentField
+);
+
 // CUSTOM DROPDOWN: CONDITION AND STATUS
-// ========================================
 
 function closeCustomDropdowns(except = null) {
   document.querySelectorAll(".custom-select").forEach(wrapper => {
@@ -540,7 +557,6 @@ function syncCustomDropdown(fieldId) {
 
   if (!trigger || !menu || !source) return;
 
-  // OPEN AND CLOSE DROPDOWN
   trigger.addEventListener("click", event => {
     event.preventDefault();
     event.stopPropagation();
@@ -557,7 +573,6 @@ function syncCustomDropdown(fieldId) {
     );
   });
 
-  // SELECT AN OPTION
   menu.querySelectorAll(
     ".custom-select-option"
   ).forEach(option => {
@@ -567,17 +582,14 @@ function syncCustomDropdown(fieldId) {
 
       source.value = option.dataset.value;
 
-      // UPDATE ORIGINAL SELECT VALUE
       source.dispatchEvent(
         new Event("change", {
           bubbles: true
         })
       );
 
-      // UPDATE VISIBLE BUTTON
       syncCustomDropdown(fieldId);
 
-      // CLOSE MENU
       menu.hidden = true;
 
       trigger.setAttribute(
@@ -589,7 +601,6 @@ function syncCustomDropdown(fieldId) {
     });
   });
 
-  // KEEP BOTH VALUES SYNCHRONIZED
   source.addEventListener("change", () => {
     syncCustomDropdown(fieldId);
   });
@@ -614,6 +625,8 @@ document.addEventListener("keydown", event => {
 // RESET FORM
 function resetForm() {
   form.reset();
+
+  updateOtherEquipmentField();
 
   syncCustomDropdown("condition");
   syncCustomDropdown("status");
@@ -769,7 +782,11 @@ form.addEventListener(
       return;
     }
 
-    const name = fields.name.value.trim();
+    const selectedName = fields.name.value.trim();
+
+    const name = selectedName === "Others"
+      ? otherEquipmentNameInput.value.trim()
+      : selectedName;
 
     const quantity = Number(fields.qty.value);
 
@@ -788,7 +805,9 @@ form.addEventListener(
       !location
     ) {
       toast(
-        "Complete all fields with valid values."
+        selectedName === "Others" && !name
+          ? "Please specify the equipment name."
+          : "Complete all fields with valid values."
       );
 
       return;
@@ -861,7 +880,24 @@ $("inventoryBody").addEventListener(
     if (button.dataset.action === "edit") {
       fields.id.value = record.id;
 
-      fields.name.value = record.name || "";
+      const savedName = record.name || "";
+
+      const hasMatchingOption = Array.from(
+        fields.name.options
+      ).some(option =>
+        option.value === savedName ||
+        option.textContent.trim() === savedName
+      );
+
+      if (hasMatchingOption) {
+        fields.name.value = savedName;
+        otherEquipmentNameInput.value = "";
+      } else {
+        fields.name.value = "Others";
+        otherEquipmentNameInput.value = savedName;
+      }
+
+      updateOtherEquipmentField();
 
       fields.qty.value = record.quantity ?? "";
 
@@ -871,7 +907,6 @@ $("inventoryBody").addEventListener(
       fields.status.value =
         record.status || "";
 
-      // UPDATE CUSTOM DROPDOWNS
       syncCustomDropdown("condition");
       syncCustomDropdown("status");
 
@@ -973,7 +1008,6 @@ function downloadPdf() {
     return;
   }
 
-  // ASK FOR FILENAME
   const filename = prompt(
     "PDF filename:",
     "School_Equipment_Inventory_Report"
@@ -1046,7 +1080,6 @@ function downloadPdf() {
       )
   );
 
-  // CHECK AUTOTABLE
   if (typeof pdf.autoTable !== "function") {
     toast(
       "PDF table library is missing. Check the jsPDF AutoTable script in index.html."
